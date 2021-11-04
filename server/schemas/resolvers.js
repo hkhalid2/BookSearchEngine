@@ -17,11 +17,13 @@ const resolvers = {
     },
 
     Mutation: {
+
         addUser: async (parent, {username, email, password}) => {
             const user = await User.create({username, email, password});
             const token = signToken(user);
             return {token, user};
         },
+
         login: async (parent, { email, password }) => {
             const user = await User.findOne({email});
             if (!user) {
@@ -35,7 +37,31 @@ const resolvers = {
             }
 
         },
-    },
+
+        saveBook: async(parents, args, context) => {
+            if (context.user) {
+                const updateUser = await User.findOneandUpdate(
+                    { _id: context.user._id },
+                    { $addToSet: { savedBooks: args.input } },
+                    { new: true, runValidators: true }
+                );
+                return updateUser;
+            };
+            throw new AuthenticationError("Please be logged in!");
+         },
+
+         removeBook: async(parent, {bookId}, context) => {
+            if (context.user) {
+                const updateUser = await User.findOneandUpdate(
+                    { _id: context.user._id },
+                    { $pull: { savedBooks: { bookId} } },
+                    { new: true, runValidators: true }
+                );
+                return updateUser;
+            };
+            throw new AuthenticationError("Please be logged in!");
+         }
+    }
 };
 
 module.exports = resolvers;
