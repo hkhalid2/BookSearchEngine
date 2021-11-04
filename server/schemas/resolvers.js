@@ -6,7 +6,7 @@ const { AuthenticationError } = require('apollo-server-express');
 
 const resolvers = {
     Query: {
-        me: async (parent, args, context) => {
+        me: async (parent, {email, password}, context) => {
             if (context.user) {
                 const userData = await User.findOne({ _id: context.user._id });
                 return userData
@@ -17,17 +17,23 @@ const resolvers = {
     },
 
     Mutation: {
-        createMatchup: async (parent, args) => {
-            const matchup = await Matchup.create(args);
-            return matchup;
+        addUser: async (parent, {username, email, password}) => {
+            const user = await User.create({username, email, password});
+            const token = signToken(user);
+            return {token, user};
         },
-        createVote: async (parent, { _id, techNum }) => {
-            const vote = await Matchup.findOneAndUpdate(
-                { _id },
-                { $inc: { [`tech${techNum}_votes`]: 1 } },
-                { new: true }
-            );
-            return vote;
+        login: async (parent, { email, password }) => {
+            const user = await User.findOne({email});
+            if (!user) {
+                throw new AuthenticationError('No user found of this name.');
+            }
+
+            const passwordCheck = await user.isCorrectPassword(password);
+
+            if(!passwordCheck) {
+                throw new AuthenticationError("Incorrect Password, Try Again!")
+            }
+
         },
     },
 };
