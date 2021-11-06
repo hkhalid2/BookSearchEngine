@@ -3,7 +3,8 @@ const path = require('path');
 const db = require('./config/connection');
 const { ApolloServer } = require('apollo-server-express');
 const { authMiddleware } = require('./utils/auth');
-const { typeDefs, resolvers} = require('./schemas')
+const { typeDefs, resolvers} = require('./schemas');
+const mongoose = require("mongoose");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -14,6 +15,16 @@ const server = new ApolloServer({
   context: authMiddleware,
   //used so that authmiddleware() function can pass to resolver function
 });
+
+mongoose.connect(
+  process.env.MONGODB_URI || 'mongodb://localhost/books',
+  {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    useCreateIndex: true,
+    useFindAndModify: false,
+  },
+);
 
 server.applyMiddleware({ app });
 
